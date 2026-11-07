@@ -115,7 +115,7 @@
             <h2>Enviar resultados</h2>
             <p class="sub">Cada botão abre o WhatsApp com o link privado de uma pessoa.</p>
             <div class="notice"><span>🔒</span><span><b>Atenção:</b> envie um link por vez, sem abrir ou inspecionar o conteúdo do link.</span></div>
-            <div id="hostingWarning" class="error" style="display:block; margin-top:12px;"><b>Importante:</b> este arquivo está sendo executado em um endereço local. O link só abrirá para outra pessoa depois que o <code>index.html</code> estiver publicado em um endereço público (por exemplo, GitHub Pages ou Netlify). <code>127.0.0.1</code> só funciona neste computador.</div>
+            <div id="hostingWarning" class="error" style="display:none; margin-top:12px;"><b>Importante:</b> este arquivo está sendo executado em um endereço local. Publique o projeto em um endereço público antes de enviar os links. <code>127.0.0.1</code> só funciona neste computador.</div>
             <div id="sendList" class="send-list"></div>
             <p class="tiny">Os links são temporários nesta sessão do navegador. Se você sortear novamente, os links anteriores deixarão de ser válidos.</p>
             <div class="actions"><button class="btn ghost" id="redrawBtn">Refazer sorteio</button></div>
@@ -195,6 +195,11 @@
   }
   function currentBaseUrl() { return location.href.split('#')[0].split('?')[0]; }
   function makeLink(giver, receiver) { return `${currentBaseUrl()}?reveal=${encodePayload(giver, receiver)}`; }
+  function updateHostingWarning() {
+    const host = location.hostname;
+    const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0' || host === '';
+    $('hostingWarning').style.display = isLocal ? 'block' : 'none';
+  }
   function draw() {
     hideError($('listError')); if (state.people.length < 3) { showError($('listError'), 'É necessário ter pelo menos 3 participantes para formar um ciclo completo.'); return; }
     const pairs = makeCycle(); state.links = pairs.map(({ giver, receiver }) => ({ person: state.people[giver], link: makeLink(state.people[giver], state.people[receiver]) }));
@@ -214,6 +219,7 @@
   }
   $('closeReveal').addEventListener('click', () => { history.replaceState(null, '', currentBaseUrl()); $('revealView').style.display = 'none'; $('organizerView').style.display = 'block'; });
   const revealToken = new URLSearchParams(location.search).get('reveal') || (location.hash.startsWith('#reveal=') ? location.hash.slice(8) : '');
+  updateHostingWarning();
   if (revealToken) showReveal(revealToken); else renderPeople();
 </script>
 </body>
