@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#10140f" />
+  <title>Amigo Secreto via WhatsApp</title>
+  <style>
+    :root {
+      --bg: #0d110d;
+      --panel: #151b15;
+      --panel-2: #1c251c;
+      --line: #364334;
+      --text: #eef4e8;
+      --muted: #aab7a4;
+      --accent: #b9d96b;
+      --accent-strong: #8fb840;
+      --whatsapp: #25d366;
+      --danger: #ff7b7b;
+      --shadow: 0 22px 60px rgba(0, 0, 0, .32);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(126, 151, 72, .17), transparent 30rem),
+        radial-gradient(circle at 92% 8%, rgba(56, 81, 46, .22), transparent 28rem),
+        linear-gradient(135deg, rgba(35, 48, 31, .5) 25%, transparent 25%) 0 0 / 42px 42px,
+        linear-gradient(315deg, rgba(29, 40, 27, .45) 25%, transparent 25%) 0 0 / 58px 58px,
+        var(--bg);
+    }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .shell { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 52px; }
+    .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+    .brand-mark { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 15px; background: var(--accent); color: #18200f; font-size: 25px; box-shadow: 0 8px 24px rgba(185, 217, 107, .18); }
+    .brand h1 { font-size: clamp(22px, 3vw, 30px); line-height: 1.1; margin: 0; letter-spacing: -.04em; }
+    .brand p { color: var(--muted); margin: 5px 0 0; font-size: 14px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr); gap: 18px; align-items: start; }
+    .card { background: linear-gradient(145deg, rgba(25, 33, 24, .97), rgba(16, 22, 16, .97)); border: 1px solid rgba(126, 151, 113, .26); border-radius: 22px; box-shadow: var(--shadow); padding: clamp(18px, 3vw, 28px); }
+    .card + .card { margin-top: 18px; }
+    h2 { margin: 0 0 7px; font-size: 19px; letter-spacing: -.02em; }
+    .sub { margin: 0 0 21px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    label { display: block; color: #d5dfd0; font-size: 13px; font-weight: 650; margin: 0 0 7px; }
+    input, textarea { width: 100%; color: var(--text); background: #0d130e; border: 1px solid var(--line); border-radius: 11px; padding: 12px 13px; outline: none; transition: .2s border, .2s box-shadow; }
+    input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(185, 217, 107, .13); }
+    textarea { min-height: 112px; resize: vertical; line-height: 1.5; }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 14px; }
+    .btn { border: 0; border-radius: 11px; padding: 11px 15px; color: #16200d; background: var(--accent); font-weight: 750; transition: transform .15s, filter .15s; }
+    .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .btn.secondary { color: var(--text); background: #273326; border: 1px solid #445541; }
+    .btn.ghost { color: var(--muted); background: transparent; border: 1px solid var(--line); }
+    .btn.danger { color: #ffd7d7; background: transparent; border: 1px solid rgba(255, 123, 123, .38); }
+    .btn.whatsapp { color: #07150b; background: var(--whatsapp); }
+    .divider { height: 1px; background: rgba(126, 151, 113, .2); margin: 24px 0; }
+    .section-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 12px; }
+    .count { color: var(--accent); background: rgba(185, 217, 107, .12); border: 1px solid rgba(185, 217, 107, .25); border-radius: 999px; padding: 5px 9px; font-size: 12px; white-space: nowrap; }
+    .participants { display: grid; gap: 8px; }
+    .person { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: rgba(41, 54, 39, .55); border: 1px solid rgba(107, 130, 99, .26); padding: 11px 12px; border-radius: 12px; }
+    .person strong { display: block; font-size: 14px; }
+    .person small { color: var(--muted); display: block; margin-top: 2px; }
+    .remove { border: 0; color: #ffc1c1; background: transparent; font-size: 20px; line-height: 1; padding: 3px 5px; }
+    .empty { color: var(--muted); border: 1px dashed #465544; border-radius: 12px; padding: 18px; text-align: center; font-size: 14px; }
+    .notice { display: flex; gap: 10px; padding: 13px; border-radius: 13px; background: rgba(185, 217, 107, .09); border: 1px solid rgba(185, 217, 107, .25); color: #dbe8c9; font-size: 13px; line-height: 1.45; }
+    .notice b { color: var(--accent); }
+    .error { display: none; color: #ffd0d0; background: rgba(152, 38, 38, .2); border: 1px solid rgba(255, 123, 123, .35); padding: 11px 13px; border-radius: 11px; margin-top: 13px; font-size: 14px; }
+    .results { display: none; }
+    .send-list { display: grid; gap: 9px; margin-top: 16px; }
+    .send-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 11px; border: 1px solid rgba(107, 130, 99, .26); background: rgba(41, 54, 39, .55); border-radius: 12px; }
+    .send-row span { font-size: 14px; font-weight: 650; }
+    .send-row .btn { padding: 8px 11px; font-size: 12px; }
+    .tiny { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 14px 0 0; }
+    .reveal { display: none; min-height: 78vh; place-items: center; }
+    .reveal-card { max-width: 570px; text-align: center; }
+    .gift { font-size: 52px; margin-bottom: 8px; }
+    .reveal-card h2 { font-size: clamp(25px, 5vw, 38px); margin-bottom: 13px; }
+    .secret-name { color: var(--accent); font-size: clamp(30px, 7vw, 58px); font-weight: 850; letter-spacing: -.05em; margin: 17px 0 20px; overflow-wrap: anywhere; }
+    .footer { color: #7e8d79; text-align: center; font-size: 12px; margin-top: 24px; }
+    @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .fields { grid-template-columns: 1fr; } .shell { width: min(100% - 22px, 620px); padding-top: 18px; } .card { border-radius: 17px; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div id="organizerView">
+      <header class="brand">
+        <div class="brand-mark">🎁</div>
+        <div><h1>Amigo Secreto</h1><p>Sorteie e envie os resultados pelo WhatsApp.</p></div>
+      </header>
+      <div class="layout">
+        <section class="card">
+          <h2>Adicionar participantes</h2>
+          <p class="sub">Cadastre cada pessoa com um número que tenha WhatsApp.</p>
+          <div class="fields">
+            <div><label for="name">Nome</label><input id="name" type="text" placeholder="Ex.: Ana" autocomplete="off"></div>
+            <div><label for="phone">Celular internacional</label><input id="phone" type="tel" placeholder="Ex.: +55 11 99999-9999" autocomplete="off"></div>
+          </div>
+          <div id="formError" class="error" role="alert"></div>
+          <div class="actions"><button class="btn" id="addBtn">Adicionar participante</button><button class="btn secondary" id="clearBtn" type="button">Limpar campos</button></div>
+          <div class="divider"></div>
+          <h2>Lista rápida</h2>
+          <p class="sub">Cole uma pessoa por linha no formato <b>Nome, Telefone</b>.</p>
+          <textarea id="quickList" placeholder="Ana, +55 11 99999-9999&#10;Bruno, +55 21 98888-8888"></textarea>
+          <div class="actions"><button class="btn secondary" id="importBtn">Importar lista</button></div>
+        </section>
+        <aside>
+          <section class="card">
+            <div class="section-head"><h2>Participantes</h2><span class="count" id="count">0 pessoas</span></div>
+            <div id="participants" class="participants"><div class="empty">Adicione pelo menos 3 pessoas para começar.</div></div>
+            <div id="listError" class="error" role="alert"></div>
+            <div class="actions"><button class="btn" id="drawBtn">Sortear amigo secreto</button></div>
+          </section>
+          <section class="card results" id="resultsCard">
+            <h2>Enviar resultados</h2>
+            <p class="sub">Cada botão abre o WhatsApp com o link privado de uma pessoa.</p>
+            <div class="notice"><span>🔒</span><span><b>Atenção:</b> envie um link por vez, sem abrir ou inspecionar o conteúdo do link.</span></div>
+            <div id="hostingWarning" class="error" style="display:block; margin-top:12px;"><b>Importante:</b> este arquivo está sendo executado em um endereço local. O link só abrirá para outra pessoa depois que o <code>index.html</code> estiver publicado em um endereço público (por exemplo, GitHub Pages ou Netlify). <code>127.0.0.1</code> só funciona neste computador.</div>
+            <div id="sendList" class="send-list"></div>
+            <p class="tiny">Os links são temporários nesta sessão do navegador. Se você sortear novamente, os links anteriores deixarão de ser válidos.</p>
+            <div class="actions"><button class="btn ghost" id="redrawBtn">Refazer sorteio</button></div>
+          </section>
+        </aside>
+      </div>
+      <div class="footer">Dados mantidos apenas neste navegador durante esta sessão.</div>
+    </div>
+
+    <section id="revealView" class="reveal">
+      <div class="card reveal-card">
+        <div class="gift">🎁</div>
+        <p class="sub" id="revealGreeting">Seu Amigo Secreto está pronto</p>
+        <h2>Você tirou:</h2>
+        <div class="secret-name" id="secretName"></div>
+        <p class="sub">Mantenha segredo e prepare uma surpresa especial! 🤫</p>
+        <button class="btn ghost" id="closeReveal">Fechar</button>
+      </div>
+    </section>
+  </main>
+<script>
+  const state = { people: [], links: [] };
+  const $ = (id) => document.getElementById(id);
+  const nameInput = $('name'), phoneInput = $('phone');
+  const phoneDigits = (value) => (value || '').replace(/\D/g, '');
+  const validPhone = (value) => phoneDigits(value).length >= 10 && phoneDigits(value).length <= 15;
+  const showError = (el, message) => { el.textContent = message; el.style.display = 'block'; };
+  const hideError = (el) => { el.textContent = ''; el.style.display = 'none'; };
+  const normalizePhone = (value) => { const digits = phoneDigits(value); return '+' + digits; };
+
+  function renderPeople() {
+    $('count').textContent = `${state.people.length} ${state.people.length === 1 ? 'pessoa' : 'pessoas'}`;
+    const box = $('participants'); box.innerHTML = '';
+    if (!state.people.length) { box.innerHTML = '<div class="empty">Adicione pelo menos 3 pessoas para começar.</div>'; return; }
+    state.people.forEach((person, index) => {
+      const row = document.createElement('div'); row.className = 'person';
+      row.innerHTML = `<div><strong>${escapeHtml(person.name)}</strong><small>${escapeHtml(person.phone)}</small></div><button class="remove" title="Remover ${escapeHtml(person.name)}" aria-label="Remover ${escapeHtml(person.name)}" data-index="${index}">×</button>`;
+      row.querySelector('.remove').addEventListener('click', () => { state.people.splice(index, 1); state.links = []; $('resultsCard').style.display = 'none'; renderPeople(); });
+      box.appendChild(row);
+    });
+  }
+  function escapeHtml(text) { return String(text).replace(/[&<>'"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c])); }
+  function addPerson(name, phone) {
+    name = String(name || '').trim(); phone = String(phone || '').trim();
+    if (!name) return 'Informe um nome.';
+    if (!validPhone(phone)) return 'Informe um celular válido com DDD e código do país (10 a 15 dígitos).';
+    if (state.people.some(p => p.name.toLowerCase() === name.toLowerCase())) return 'Já existe uma pessoa com esse nome.';
+    if (state.people.some(p => phoneDigits(p.phone) === phoneDigits(phone))) return 'Esse número já foi cadastrado.';
+    state.people.push({ name, phone: normalizePhone(phone) }); return '';
+  }
+  $('addBtn').addEventListener('click', () => { hideError($('formError')); const error = addPerson(nameInput.value, phoneInput.value); if (error) { showError($('formError'), error); return; } nameInput.value = ''; phoneInput.value = ''; nameInput.focus(); renderPeople(); });
+  $('clearBtn').addEventListener('click', () => { nameInput.value = ''; phoneInput.value = ''; hideError($('formError')); nameInput.focus(); });
+  $('importBtn').addEventListener('click', () => {
+    hideError($('formError')); const lines = $('quickList').value.split(/\r?\n/).map(x => x.trim()).filter(Boolean); if (!lines.length) { showError($('formError'), 'Cole ao menos uma linha no formato Nome, Telefone.'); return; }
+    const errors = []; lines.forEach((line, i) => { const comma = line.indexOf(','); if (comma < 1) { errors.push(`Linha ${i + 1}: use Nome, Telefone.`); return; } const err = addPerson(line.slice(0, comma), line.slice(comma + 1)); if (err) errors.push(`Linha ${i + 1}: ${err}`); });
+    $('quickList').value = ''; renderPeople(); if (errors.length) showError($('formError'), errors.join(' '));
+  });
+  [nameInput, phoneInput].forEach(input => input.addEventListener('keydown', e => { if (e.key === 'Enter') $('addBtn').click(); }));
+
+  // Fisher-Yates + deslocamento garante um único ciclo Hamiltoniano.
+  function makeCycle() {
+    if (state.people.length < 3) throw new Error('Adicione pelo menos 3 participantes para gerar um ciclo válido.');
+    const order = state.people.map((_, i) => i);
+    for (let i = order.length - 1; i > 0; i--) { const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1); [order[i], order[j]] = [order[j], order[i]]; }
+    return order.map((giver, i) => ({ giver, receiver: order[(i + 1) % order.length] }));
+  }
+  function encodePayload(giver, receiver) {
+    const payload = JSON.stringify({ v: 1, t: crypto.randomUUID(), from: giver.name, to: receiver.name });
+    const bytes = new TextEncoder().encode(payload); let binary = ''; bytes.forEach(b => binary += String.fromCharCode(b));
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function decodePayload(encoded) {
+    const normalized = encoded.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+    const binary = atob(padded);
+    return JSON.parse(new TextDecoder().decode(Uint8Array.from(binary, c => c.charCodeAt(0))));
+  }
+  function currentBaseUrl() { return location.href.split('#')[0].split('?')[0]; }
+  function makeLink(giver, receiver) { return `${currentBaseUrl()}?reveal=${encodePayload(giver, receiver)}`; }
+  function draw() {
+    hideError($('listError')); if (state.people.length < 3) { showError($('listError'), 'É necessário ter pelo menos 3 participantes para formar um ciclo completo.'); return; }
+    const pairs = makeCycle(); state.links = pairs.map(({ giver, receiver }) => ({ person: state.people[giver], link: makeLink(state.people[giver], state.people[receiver]) }));
+    const list = $('sendList'); list.innerHTML = '';
+    state.links.forEach(item => { const row = document.createElement('div'); row.className = 'send-row'; row.innerHTML = `<span>${escapeHtml(item.person.name)}</span><button class="btn whatsapp">Enviar para ${escapeHtml(item.person.name)}</button>`; row.querySelector('button').addEventListener('click', () => openWhatsApp(item)); list.appendChild(row); });
+    $('resultsCard').style.display = 'block'; $('resultsCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function openWhatsApp(item) {
+    const text = `Olá, ${item.person.name}! Seu Amigo Secreto está pronto. Abra o link abaixo para descobrir quem você tirou. Mantenha segredo!\n\n${item.link}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+  }
+  $('drawBtn').addEventListener('click', draw); $('redrawBtn').addEventListener('click', draw);
+
+  function showReveal(encoded) {
+    try { const data = decodePayload(encoded); if (!data.from || !data.to) throw new Error(); $('organizerView').style.display = 'none'; $('revealView').style.display = 'grid'; $('revealGreeting').textContent = `Olá, ${data.from}! Seu Amigo Secreto está pronto.`; $('secretName').textContent = data.to; }
+    catch { $('organizerView').style.display = 'block'; showError($('listError'), 'Este link é inválido ou está corrompido.'); }
+  }
+  $('closeReveal').addEventListener('click', () => { history.replaceState(null, '', currentBaseUrl()); $('revealView').style.display = 'none'; $('organizerView').style.display = 'block'; });
+  const revealToken = new URLSearchParams(location.search).get('reveal') || (location.hash.startsWith('#reveal=') ? location.hash.slice(8) : '');
+  if (revealToken) showReveal(revealToken); else renderPeople();
+</script>
+</body>
+</html>
