@@ -96,6 +96,7 @@
             <div><label for="name">Nome</label><input id="name" type="text" placeholder="Ex.: Ana" autocomplete="off"></div>
             <div><label for="phone">Celular internacional</label><input id="phone" type="tel" placeholder="Ex.: +55 11 99999-9999" autocomplete="off"></div>
           </div>
+          <div style="margin-top:12px"><label for="dependents">Dependentes com o mesmo número <span style="color:var(--muted);font-weight:400">(opcional)</span></label><input id="dependents" type="text" placeholder="Ex.: João, Maria" autocomplete="off"><p class="tiny" style="margin-top:6px">Cada nome será um participante separado no sorteio e receberá um link próprio no mesmo WhatsApp.</p></div>
           <div id="formError" class="error" role="alert"></div>
           <div class="actions"><button class="btn" id="addBtn">Adicionar participante</button><button class="btn secondary" id="clearBtn" type="button">Limpar campos</button></div>
           <div class="divider"></div>
@@ -109,7 +110,7 @@
             <div class="section-head"><h2>Participantes</h2><span class="count" id="count">0 pessoas</span></div>
             <div id="participants" class="participants"><div class="empty">Adicione pelo menos 3 pessoas para começar.</div></div>
             <div id="listError" class="error" role="alert"></div>
-            <div class="actions"><button class="btn" id="drawBtn">Sortear amigo secreto</button></div>
+            <div class="actions"><button class="btn" id="drawBtn">Sortear amigo secreto</button><button class="btn danger" id="clearSavedBtn" type="button">Apagar lista salva</button></div>
           </section>
           <section class="card results" id="resultsCard">
             <h2>Enviar resultados</h2>
@@ -122,7 +123,7 @@
           </section>
         </aside>
       </div>
-      <div class="footer">Dados mantidos apenas neste navegador durante esta sessão.</div>
+      <div class="footer">Nomes e números ficam salvos somente neste navegador. Nenhum dado é enviado para um servidor.</div>
     </div>
 
     <section id="revealView" class="reveal">
@@ -137,9 +138,10 @@
     </section>
   </main>
 <script>
+  const STORAGE_KEY = 'amigo-secreto-participantes-v1';
   const state = { people: [], links: [] };
   const $ = (id) => document.getElementById(id);
-  const nameInput = $('name'), phoneInput = $('phone');
+  const nameInput = $('name'), phoneInput = $('phone'), dependentsInput = $('dependents');
   const phoneDigits = (value) => (value || '').replace(/\D/g, '');
   const validPhone = (value) => phoneDigits(value).length >= 10 && phoneDigits(value).length <= 15;
   const showError = (el, message) => { el.textContent = message; el.style.display = 'block'; };
@@ -152,28 +154,40 @@
     if (!state.people.length) { box.innerHTML = '<div class="empty">Adicione pelo menos 3 pessoas para começar.</div>'; return; }
     state.people.forEach((person, index) => {
       const row = document.createElement('div'); row.className = 'person';
-      row.innerHTML = `<div><strong>${escapeHtml(person.name)}</strong><small>${escapeHtml(person.phone)}</small></div><button class="remove" title="Remover ${escapeHtml(person.name)}" aria-label="Remover ${escapeHtml(person.name)}" data-index="${index}">×</button>`;
-      row.querySelector('.remove').addEventListener('click', () => { state.people.splice(index, 1); state.links = []; $('resultsCard').style.display = 'none'; renderPeople(); });
+      const relation = person.isDependent ? `Dependente de ${escapeHtml(person.responsible)}` : 'Responsável';
+      row.innerHTML = `<div><strong>${escapeHtml(person.name)}</strong><small>${relation} · ${escapeHtml(person.phone)}</small></div><button class="remove" title="Remover ${escapeHtml(person.name)}" aria-label="Remover ${escapeHtml(person.name)}" data-index="${index}">×</button>`;
+      row.querySelector('.remove').addEventListener('click', () => { state.people.splice(index, 1); state.links = []; savePeople(); $('resultsCard').style.display = 'none'; renderPeople(); });
       box.appendChild(row);
     });
   }
+  function savePeople() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.people)); }
+  function loadPeople() {
+    try { const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); if (Array.isArray(saved)) state.people = saved.filter(p => p && p.name && p.phone).map(p => ({ name: String(p.name), phone: String(p.phone), isDependent: Boolean(p.isDependent), responsible: p.responsible ? String(p.responsible) : '' })); }
+    catch { state.people = []; }
+  }
   function escapeHtml(text) { return String(text).replace(/[&<>'"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c])); }
-  function addPerson(name, phone) {
+  function addPerson(name, phone, isDependent = false, responsible = '') {
     name = String(name || '').trim(); phone = String(phone || '').trim();
     if (!name) return 'Informe um nome.';
     if (!validPhone(phone)) return 'Informe um celular válido com DDD e código do país (10 a 15 dígitos).';
     if (state.people.some(p => p.name.toLowerCase() === name.toLowerCase())) return 'Já existe uma pessoa com esse nome.';
-    if (state.people.some(p => phoneDigits(p.phone) === phoneDigits(phone))) return 'Esse número já foi cadastrado.';
-    state.people.push({ name, phone: normalizePhone(phone) }); return '';
+    if (!isDependent && state.people.some(p => phoneDigits(p.phone) === phoneDigits(phone))) return 'Esse número já foi cadastrado. Para filhos ou dependentes, use o campo específico abaixo.';
+    state.people.push({ name, phone: normalizePhone(phone), isDependent, responsible }); return '';
   }
-  $('addBtn').addEventListener('click', () => { hideError($('formError')); const error = addPerson(nameInput.value, phoneInput.value); if (error) { showError($('formError'), error); return; } nameInput.value = ''; phoneInput.value = ''; nameInput.focus(); renderPeople(); });
-  $('clearBtn').addEventListener('click', () => { nameInput.value = ''; phoneInput.value = ''; hideError($('formError')); nameInput.focus(); });
+  $('addBtn').addEventListener('click', () => {
+    hideError($('formError')); const name = nameInput.value.trim(); const phone = phoneInput.value.trim(); const dependents = dependentsInput.value.split(/[,\n;]/).map(x => x.trim()).filter(Boolean);
+    const before = state.people.length; let error = addPerson(name, phone); if (!error) dependents.forEach(child => { if (!error) error = addPerson(child, phone, true, name); });
+    if (error) { state.people.length = before; showError($('formError'), error); return; }
+    savePeople(); nameInput.value = ''; phoneInput.value = ''; dependentsInput.value = ''; nameInput.focus(); renderPeople();
+  });
+  $('clearBtn').addEventListener('click', () => { nameInput.value = ''; phoneInput.value = ''; dependentsInput.value = ''; hideError($('formError')); nameInput.focus(); });
+  $('clearSavedBtn').addEventListener('click', () => { if (!state.people.length || confirm('Apagar todos os participantes salvos neste navegador?')) { state.people = []; state.links = []; savePeople(); $('resultsCard').style.display = 'none'; renderPeople(); } });
   $('importBtn').addEventListener('click', () => {
     hideError($('formError')); const lines = $('quickList').value.split(/\r?\n/).map(x => x.trim()).filter(Boolean); if (!lines.length) { showError($('formError'), 'Cole ao menos uma linha no formato Nome, Telefone.'); return; }
     const errors = []; lines.forEach((line, i) => { const comma = line.indexOf(','); if (comma < 1) { errors.push(`Linha ${i + 1}: use Nome, Telefone.`); return; } const err = addPerson(line.slice(0, comma), line.slice(comma + 1)); if (err) errors.push(`Linha ${i + 1}: ${err}`); });
-    $('quickList').value = ''; renderPeople(); if (errors.length) showError($('formError'), errors.join(' '));
+    $('quickList').value = ''; savePeople(); renderPeople(); if (errors.length) showError($('formError'), errors.join(' '));
   });
-  [nameInput, phoneInput].forEach(input => input.addEventListener('keydown', e => { if (e.key === 'Enter') $('addBtn').click(); }));
+  [nameInput, phoneInput, dependentsInput].forEach(input => input.addEventListener('keydown', e => { if (e.key === 'Enter') $('addBtn').click(); }));
 
   // Fisher-Yates + deslocamento garante um único ciclo Hamiltoniano.
   function makeCycle() {
@@ -220,6 +234,7 @@
   $('closeReveal').addEventListener('click', () => { history.replaceState(null, '', currentBaseUrl()); $('revealView').style.display = 'none'; $('organizerView').style.display = 'block'; });
   const revealToken = new URLSearchParams(location.search).get('reveal') || (location.hash.startsWith('#reveal=') ? location.hash.slice(8) : '');
   updateHostingWarning();
+  loadPeople();
   if (revealToken) showReveal(revealToken); else renderPeople();
 </script>
 </body>
